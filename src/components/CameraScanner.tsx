@@ -3,6 +3,7 @@ import { Camera, SwitchCamera, CheckCircle2, XCircle, Download, RefreshCw } from
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 type ScanStatus = "idle" | "scanning" | "success" | "error";
 
@@ -26,6 +27,7 @@ const CameraScanner = ({ onScanSuccess }: CameraScannerProps) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string>("");
   const [cameraActive, setCameraActive] = useState(false);
+  const { user, decreaseBalance } = useAuth();
 
   // Detect device type
   useEffect(() => {
@@ -35,7 +37,7 @@ const CameraScanner = ({ onScanSuccess }: CameraScannerProps) => {
       );
       setIsLaptop(!isMobile);
       if (!isMobile) {
-        setFacingMode("user"); // Default to front camera on laptops
+        setFacingMode("user");
       }
     };
     checkDeviceType();
@@ -50,7 +52,7 @@ const CameraScanner = ({ onScanSuccess }: CameraScannerProps) => {
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode: facingMode,
-          width: { ideal: 1280 },
+          width: { ideal: 720 },
           height: { ideal: 720 },
         },
       };
@@ -100,16 +102,18 @@ const CameraScanner = ({ onScanSuccess }: CameraScannerProps) => {
     };
   }, []);
 
-  // Simulate scan detection (replace with actual barcode/QR detection logic)
   const simulateScan = async () => {
+    if (user && user.balance <= 0) {
+      setError("Insufficient balance. Please top up your credits.");
+      setStatus("error");
+      return;
+    }
+
     setStatus("scanning");
     
-    // Simulate API call
     try {
-      // Replace this URL with your actual API endpoint
       const mockApiCall = new Promise<ScanResult>((resolve, reject) => {
         setTimeout(() => {
-          // Simulate 80% success rate
           if (Math.random() > 0.2) {
             resolve({
               name: "John Doe",
@@ -134,6 +138,7 @@ const CameraScanner = ({ onScanSuccess }: CameraScannerProps) => {
       const result = await mockApiCall;
       setScanResult(result);
       setStatus("success");
+      decreaseBalance(); // Decrease balance by 1 on success
       onScanSuccess?.(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Scan failed");
@@ -171,6 +176,18 @@ Created At: ${scanResult.timestamp}
 
   return (
     <div className="space-y-6">
+      {/* Balance Warning */}
+      {user && user.balance <= 5 && user.balance > 0 && (
+        <div className="p-3 rounded-lg bg-yellow-500/10 text-yellow-500 text-sm border border-yellow-500/20">
+          ⚠️ Low balance: {user.balance} credits remaining
+        </div>
+      )}
+      {user && user.balance === 0 && (
+        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm border border-destructive/20">
+          ❌ No credits remaining. Please top up to continue scanning.
+        </div>
+      )}
+
       {/* Camera Controls */}
       <div className="flex flex-wrap items-center gap-4">
         <Select
@@ -200,7 +217,7 @@ Created At: ${scanResult.timestamp}
         )}
       </div>
 
-      {/* Scanner Box */}
+      {/* Scanner Box - Now Square */}
       <div
         className={cn(
           "relative rounded-xl overflow-hidden scanner-box",
@@ -208,11 +225,11 @@ Created At: ${scanResult.timestamp}
           status === "error" && "error animate-shake"
         )}
       >
-        <div className="aspect-video bg-secondary/50 relative">
+        <div className="aspect-square max-w-md mx-auto bg-secondary/50 relative">
           {!cameraActive ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
               <Camera className="w-16 h-16 text-muted-foreground" />
-              <Button onClick={startCamera} className="gap-2">
+              <Button onClick={startCamera} className="gap-2" disabled={user?.balance === 0}>
                 <Camera className="w-4 h-4" />
                 Start Camera
               </Button>
@@ -247,8 +264,12 @@ Created At: ${scanResult.timestamp}
 
       {/* Action Buttons */}
       {cameraActive && (
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={simulateScan} disabled={status === "scanning"} className="gap-2">
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Button 
+            onClick={simulateScan} 
+            disabled={status === "scanning" || user?.balance === 0} 
+            className="gap-2"
+          >
             {status === "scanning" ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />

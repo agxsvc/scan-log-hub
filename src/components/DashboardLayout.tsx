@@ -1,8 +1,11 @@
 import { ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { Scan, History, Menu, X } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { Scan, History, Menu, X, LogOut, Wallet } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -15,7 +18,7 @@ const navItems = [
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -27,6 +30,27 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             ScanDash
           </h1>
         </div>
+
+        {/* User Info */}
+        {user && (
+          <div className="p-4 border-b border-sidebar-border">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10 border-2 border-primary/20">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                  {user.name.split(" ").map((n) => n[0]).join("").toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{user.name}</p>
+                <div className="flex items-center gap-1 text-sm text-primary">
+                  <Wallet className="w-3 h-3" />
+                  <span>{user.balance} credits</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <nav className="flex-1 p-4 space-y-2">
           {navItems.map((item) => (
             <NavLink
@@ -46,6 +70,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </NavLink>
           ))}
         </nav>
+
+        <div className="p-4 border-t border-sidebar-border">
+          <Button variant="ghost" className="w-full justify-start gap-3" onClick={logout}>
+            <LogOut className="w-5 h-5" />
+            Logout
+          </Button>
+        </div>
       </aside>
 
       {/* Mobile Header */}
@@ -55,12 +86,20 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Scan className="w-5 h-5" />
             ScanDash
           </h1>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg bg-sidebar-accent"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="flex items-center gap-1 text-sm text-primary bg-primary/10 px-2 py-1 rounded">
+                <Wallet className="w-3 h-3" />
+                <span>{user.balance}</span>
+              </div>
+            )}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-lg bg-sidebar-accent"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
         {mobileMenuOpen && (
           <nav className="p-4 space-y-2 border-t border-sidebar-border">
@@ -82,6 +121,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 {item.label}
               </NavLink>
             ))}
+            <Button variant="ghost" className="w-full justify-start gap-3 mt-2" onClick={logout}>
+              <LogOut className="w-5 h-5" />
+              Logout
+            </Button>
           </nav>
         )}
       </div>

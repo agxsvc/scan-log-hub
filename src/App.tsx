@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import HistoryPage from "./pages/HistoryPage";
 import LoginPage from "./pages/LoginPage";
+import HomePage from "./pages/HomePage";
 import NotFound from "./pages/NotFound";
 import { ReactNode } from "react";
 
@@ -24,8 +25,9 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/" element={<HomePage />} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+    <Route path="/scan" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>

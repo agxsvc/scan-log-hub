@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Camera, SwitchCamera, CheckCircle2, XCircle, Download, RefreshCw } from "lucide-react";
+import { Camera, SwitchCamera, CheckCircle2, XCircle, Download, RefreshCw, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const CameraScanner = ({ onScanSuccess }: CameraScannerProps) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string>("");
   const [cameraActive, setCameraActive] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { user, decreaseBalance } = useAuth();
 
   // Detect device type
@@ -168,9 +170,32 @@ Created At: ${scanResult.timestamp}
     URL.revokeObjectURL(url);
   };
 
+  const copyResult = async () => {
+    if (!scanResult) return;
+
+    const content = `Account Created Successfully
+========================
+Name: ${scanResult.name}
+Email: ${scanResult.email}
+Account ID: ${scanResult.accountId}
+Created At: ${scanResult.timestamp}
+Scanned By: ${user?.name || "Unknown"}
+`;
+
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      toast.success("Data copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("Failed to copy data");
+    }
+  };
+
   const resetScanner = () => {
     setScanResult(null);
     setError("");
+    setCopied(false);
     setStatus(cameraActive ? "scanning" : "idle");
   };
 
@@ -324,17 +349,36 @@ Created At: ${scanResult.timestamp}
                 <span className="text-muted-foreground">Account ID</span>
                 <span className="font-mono text-primary">{scanResult.accountId}</span>
               </div>
-              <div className="flex justify-between py-2">
+              <div className="flex justify-between py-2 border-b border-border">
                 <span className="text-muted-foreground">Created At</span>
                 <span className="font-medium">
                   {new Date(scanResult.timestamp).toLocaleString()}
                 </span>
               </div>
+              <div className="flex justify-between py-2">
+                <span className="text-muted-foreground">Scanned By</span>
+                <span className="font-medium text-primary">{user?.name || "Unknown"}</span>
+              </div>
             </div>
-            <Button onClick={downloadResult} className="w-full gap-2">
-              <Download className="w-4 h-4" />
-              Download as TXT
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={copyResult} variant="outline" className="flex-1 gap-2">
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy Data
+                  </>
+                )}
+              </Button>
+              <Button onClick={downloadResult} className="flex-1 gap-2">
+                <Download className="w-4 h-4" />
+                Download TXT
+              </Button>
+            </div>
           </div>
         )}
 

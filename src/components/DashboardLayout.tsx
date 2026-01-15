@@ -12,7 +12,7 @@ interface DashboardLayoutProps {
 }
 
 const navItems = [
-  { to: "/", icon: Scan, label: "Scan" },
+  { to: "/scan", icon: Scan, label: "Scan" },
   { to: "/history", icon: History, label: "History" },
 ];
 

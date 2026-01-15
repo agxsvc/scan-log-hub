@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import HistoryList from "@/components/HistoryList";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HistoryItem {
   id: string;
@@ -11,24 +12,37 @@ interface HistoryItem {
   accountId: string;
   timestamp: string;
   avatar?: string;
+  scannedBy?: string;
+  scannedByName?: string;
 }
 
 const HistoryPage = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const { user } = useAuth();
 
   const loadHistory = () => {
     const stored = localStorage.getItem("scanHistory");
-    if (stored) {
-      setHistory(JSON.parse(stored));
+    if (stored && user) {
+      const allHistory: HistoryItem[] = JSON.parse(stored);
+      // Filter by current user
+      const userHistory = allHistory.filter(item => item.scannedBy === user.id);
+      setHistory(userHistory);
     }
   };
 
   useEffect(() => {
     loadHistory();
-  }, []);
+  }, [user]);
 
   const clearHistory = () => {
-    localStorage.removeItem("scanHistory");
+    if (!user) return;
+    // Only clear current user's history
+    const stored = localStorage.getItem("scanHistory");
+    if (stored) {
+      const allHistory: HistoryItem[] = JSON.parse(stored);
+      const otherUsersHistory = allHistory.filter(item => item.scannedBy !== user.id);
+      localStorage.setItem("scanHistory", JSON.stringify(otherUsersHistory));
+    }
     setHistory([]);
   };
 
@@ -37,9 +51,9 @@ const HistoryPage = () => {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">History</h1>
+            <h1 className="text-3xl font-bold">My History</h1>
             <p className="text-muted-foreground mt-2">
-              Successfully created accounts ({history.length})
+              {user?.name}'s scanned accounts ({history.length})
             </p>
           </div>
           <div className="flex gap-2">

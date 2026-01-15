@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import CameraScanner from "@/components/CameraScanner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ScanResult {
   name: string;
@@ -9,12 +10,18 @@ interface ScanResult {
 }
 
 const ScanPage = () => {
+  const { user } = useAuth();
+
   const handleScanSuccess = (result: ScanResult) => {
-    // Store in localStorage for history
+    if (!user) return;
+    
+    // Store in localStorage with user association
     const history = JSON.parse(localStorage.getItem("scanHistory") || "[]");
     const newItem = {
       id: result.accountId,
       ...result,
+      scannedBy: user.id,
+      scannedByName: user.name,
     };
     localStorage.setItem("scanHistory", JSON.stringify([newItem, ...history]));
   };
